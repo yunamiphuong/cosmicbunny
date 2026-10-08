@@ -1,0 +1,2595 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Cosmic Bunny — Lục Hào Architecture</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600;700&family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        /* =========================================================
+           DESIGN TOKENS — COSMIC BUNNY
+           ========================================================= */
+
+        :root {
+            /* --- surfaces --- */
+            --cosmic-navy: #0E1626;
+            --cosmic-navy-deep: #080D18;
+            --cosmic-navy-soft: #172038;
+            --cosmic-navy-raised: #1C263F;
+
+            /* --- accents --- */
+            --bronze: #B8925A;
+            --bronze-light: #D0AC78;
+            --champagne: #DFC58F;
+            --ivory: #F2ECDD;
+
+            /* --- text --- */
+            --text-primary: #EDE6D8;
+            --text-secondary: #9298A9;
+            --text-muted: #626A80;
+
+            /* --- structure --- */
+            --border-subtle: rgba(184, 146, 90, 0.16);
+            --border-strong: rgba(223, 197, 143, 0.32);
+
+            /* --- ngũ hành (kept as named vars — referenced directly in JS) --- */
+            --wood: #6E8F6B;
+            --fire: #B3654A;
+            --earth: #9C7B4F;
+            --metal: #ABA184;
+            --water: #4F6E8C;
+
+            /* --- semantic (kept as named vars — referenced directly in JS) --- */
+            --sinh: #7C9A7E;
+            --khac: #B36A55;
+            --hoa: #DFC58F;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+        }
+
+        body {
+            background-color: var(--cosmic-navy-deep);
+            color: var(--text-primary);
+            font-family: 'Be Vietnam Pro', -apple-system, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1, h2, .display-font { font-family: 'Spectral', Georgia, serif; }
+
+        ::selection { background: var(--bronze); color: var(--cosmic-navy-deep); }
+
+        /* subtle scrollbar to match the palette */
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--cosmic-navy-raised); border-radius: 6px; }
+
+        /* =========================================================
+           CELESTIAL BACKDROP (fixed, restrained)
+           ========================================================= */
+
+        .cosmic-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(ellipse 60% 40% at 85% -10%, rgba(184,146,90,0.10), transparent 60%),
+                radial-gradient(ellipse 50% 30% at 5% 105%, rgba(223,197,143,0.06), transparent 60%);
+        }
+
+        .cosmic-backdrop svg { position: absolute; opacity: 0.5; }
+
+        /* =========================================================
+           TOP NAVIGATION
+           ========================================================= */
+
+        .top-nav {
+            height: 56px;
+            background-color: rgba(8, 13, 24, 0.92);
+            backdrop-filter: blur(6px);
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            padding: 0 18px;
+            gap: 14px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .drawer-toggle {
+            display: none;
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            color: var(--champagne);
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .nav-brand-mini {
+            font-family: 'Spectral', serif;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            font-size: 14px;
+            color: var(--champagne);
+            white-space: nowrap;
+        }
+
+        .nav-tabs { display: flex; gap: 6px; margin-left: auto; }
+
+        .tab-button {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid transparent;
+            padding: 9px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Be Vietnam Pro', sans-serif;
+            font-size: 12.5px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            transition: 0.2s;
+        }
+
+        .tab-button:hover {
+            color: var(--champagne);
+            background-color: var(--cosmic-navy-soft);
+        }
+
+        .tab-button.active {
+            color: var(--cosmic-navy-deep);
+            background-color: var(--champagne);
+            border-color: var(--champagne);
+        }
+
+        /* =========================================================
+           TAB SYSTEM
+           ========================================================= */
+
+        .tab-content { display: none; }
+        .tab-content.active { display: flex; }
+        #tab2.active { display: block; }
+
+        /* =========================================================
+           TAB 1 — WORKSPACE
+           ========================================================= */
+
+        #tab1 {
+            height: calc(100vh - 56px);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(4, 7, 14, 0.6);
+            z-index: 900;
+        }
+
+        .sidebar {
+            width: 336px;
+            flex-shrink: 0;
+            background-color: var(--cosmic-navy-soft);
+            border-right: 1px solid var(--border-subtle);
+            padding: 26px 22px;
+            display: flex;
+            flex-direction: column;
+            z-index: 950;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .brand-lockup {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 4px;
+        }
+
+        .brand-mark { width: 34px; height: 34px; flex-shrink: 0; }
+
+        .brand-name {
+            font-family: 'Spectral', serif;
+            font-weight: 600;
+            font-size: 19px;
+            letter-spacing: 0.06em;
+            color: var(--ivory);
+            line-height: 1.1;
+        }
+
+        .brand-tagline {
+            font-size: 10.5px;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin: 6px 0 20px 46px;
+        }
+
+        .product-name {
+            font-family: 'Spectral', serif;
+            font-size: 14.5px;
+            font-weight: 600;
+            color: var(--bronze-light);
+            letter-spacing: 0.04em;
+            margin-bottom: 18px;
+        }
+
+        .sidebar-divider {
+            height: 1px;
+            background: var(--border-subtle);
+            margin-bottom: 18px;
+        }
+
+        .field-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.09em;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 190px;
+            flex: none;
+            background-color: var(--cosmic-navy-deep);
+            color: #B9CBB4;
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            resize: none;
+            margin-bottom: 12px;
+        }
+
+        textarea:focus, button:focus-visible {
+            outline: 2px solid var(--bronze);
+            outline-offset: 1px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .btn-small {
+            background-color: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-subtle);
+            flex: 1;
+            padding: 9px 0;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            font-family: 'Be Vietnam Pro', sans-serif;
+            transition: 0.2s;
+        }
+
+        .btn-small:hover {
+            border-color: var(--bronze);
+            color: var(--champagne);
+        }
+
+        .btn-main {
+            background-color: var(--champagne);
+            color: var(--cosmic-navy-deep);
+            border: none;
+            padding: 13px;
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 0.03em;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: 0.2s;
+            font-family: 'Be Vietnam Pro', sans-serif;
+        }
+
+        .btn-main:hover { background-color: var(--ivory); }
+
+        .btn-print {
+            background: transparent;
+            color: var(--bronze-light);
+            border: 1px solid var(--bronze);
+            padding: 11px;
+            font-weight: 600;
+            font-size: 12.5px;
+            cursor: pointer;
+            border-radius: 6px;
+            margin-top: 10px;
+            transition: 0.2s;
+            font-family: 'Be Vietnam Pro', sans-serif;
+        }
+
+        .btn-print:hover { background: rgba(184,146,90,0.12); }
+
+        .convert-status {
+            margin-top: 10px;
+            font-size: 11.5px;
+            line-height: 1.5;
+            padding: 9px 10px;
+            border-radius: 6px;
+        }
+
+        .convert-status.status-success { background: rgba(124,154,126,0.15); border: 1px solid var(--sinh); color: var(--text-primary); }
+        .convert-status.status-error   { background: rgba(179,106,85,0.15); border: 1px solid var(--khac); color: var(--text-primary); }
+        .convert-status.status-info    { background: rgba(184,146,90,0.12); border: 1px solid var(--border-strong); color: var(--text-secondary); }
+
+        .sidebar-foot {
+            margin-top: auto;
+            padding-top: 20px;
+            font-size: 10.5px;
+            color: var(--text-muted);
+            text-align: center;
+            letter-spacing: 0.03em;
+        }
+
+        .main-content {
+            flex: 1;
+            min-width: 0;
+            padding: 36px 24px;
+            overflow-y: auto;
+            display: flex;
+            justify-content: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* =========================================================
+           REPORT SURFACE
+           ========================================================= */
+
+        .report {
+            background-color: var(--cosmic-navy);
+            border: 1px solid var(--border-subtle);
+            width: 210mm;
+            max-width: 100%;
+            min-height: 297mm;
+            height: max-content;
+            padding: 20mm 18mm;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+            position: relative;
+        }
+
+        .report::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--bronze) 20%, var(--champagne) 50%, var(--bronze) 80%, transparent);
+        }
+
+        .report-header {
+            text-align: center;
+            margin-bottom: 22px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .report-eyebrow {
+            font-size: 11px;
+            letter-spacing: 0.22em;
+            color: var(--bronze-light);
+            margin-bottom: 10px;
+        }
+
+        h1.report-title {
+            color: var(--ivory);
+            font-size: 26px;
+            font-weight: 600;
+            margin: 0 0 10px 0;
+        }
+
+        .report-meta {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .hexagram-name { color: var(--champagne); font-weight: 600; }
+
+        .question-box {
+            background-color: var(--cosmic-navy-soft);
+            border-left: 3px solid var(--bronze);
+            border-radius: 0 6px 6px 0;
+            padding: 14px 16px;
+            margin-bottom: 22px;
+            font-size: 13.5px;
+            line-height: 1.6;
+            color: var(--text-primary);
+        }
+
+        .question-label {
+            display: block;
+            color: var(--bronze-light);
+            font-weight: 600;
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            margin-bottom: 6px;
+        }
+
+        /* =========================================================
+           SECTION HEADERS (Tầng 1–4)
+           ========================================================= */
+
+        .section-header {
+            display: flex;
+            align-items: baseline;
+            gap: 14px;
+            margin-top: 30px;
+            margin-bottom: 14px;
+        }
+
+        .section-num {
+            font-family: 'Spectral', serif;
+            font-size: 26px;
+            font-weight: 600;
+            color: var(--bronze);
+            line-height: 1;
+        }
+
+        .section-heading { display: flex; flex-direction: column; }
+
+        .section-title {
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: var(--ivory);
+        }
+
+        .section-subtitle {
+            font-size: 11.5px;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* =========================================================
+           GRIDS / CARDS
+           ========================================================= */
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+        .box {
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 14px 16px;
+            background-color: var(--cosmic-navy-soft);
+            font-size: 13.5px;
+            line-height: 1.6;
+        }
+
+        .highlight-text {
+            color: var(--champagne);
+            font-weight: 700;
+            font-size: 12.5px;
+            letter-spacing: 0.03em;
+        }
+
+        .pillar-item {
+            display: inline-block;
+            background: var(--cosmic-navy-raised);
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin-right: 6px;
+            margin-bottom: 6px;
+            border: 1px solid var(--border-subtle);
+            font-size: 12.5px;
+        }
+
+        .element-badge {
+            display: inline-block;
+            padding: 2px 7px;
+            border-radius: 4px;
+            color: var(--cosmic-navy-deep);
+            font-weight: 700;
+            font-size: 10.5px;
+            letter-spacing: 0.02em;
+            margin-left: 5px;
+        }
+
+        .missing-branch {
+            opacity: 0.45;
+            text-decoration: line-through;
+            color: var(--text-muted);
+        }
+
+        .xunkong-text {
+            color: var(--text-secondary) !important;
+            font-style: italic;
+            border-bottom: 1px dashed var(--bronze);
+            padding-bottom: 1px;
+        }
+
+        /* --- Tuần Không celestial dial --- */
+
+        .xk-dial {
+            position: relative;
+            width: 190px;
+            height: 190px;
+            margin: 10px auto 2px;
+        }
+
+        .xk-dial::before {
+            content: '';
+            position: absolute;
+            inset: 12px;
+            border-radius: 50%;
+            border: 1px dashed var(--border-strong);
+        }
+
+        .xk-node {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 32px;
+            height: 32px;
+            margin: -16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 11.5px;
+            font-weight: 700;
+            transform: rotate(calc(var(--i) * 30deg)) translate(78px) rotate(calc(var(--i) * -30deg));
+        }
+
+        .xk-active {
+            background: var(--bronze);
+            color: var(--cosmic-navy-deep);
+            box-shadow: 0 0 10px rgba(184,146,90,0.55);
+        }
+
+        .xk-void {
+            background: transparent;
+            border: 1px dashed var(--text-muted);
+            color: var(--text-muted);
+        }
+
+        .xk-dial-center {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 22px;
+            color: var(--champagne);
+        }
+
+        /* =========================================================
+           TẦNG 2 — HEXAGRAM INSTRUMENT TABLE
+           ========================================================= */
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12.5px;
+            margin-bottom: 10px;
+            background-color: var(--cosmic-navy-soft);
+        }
+
+        th, td {
+            border: 1px solid var(--border-subtle);
+            padding: 9px 10px;
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        th {
+            background-color: var(--cosmic-navy-raised);
+            color: var(--champagne);
+            font-weight: 700;
+            font-size: 10.5px;
+            letter-spacing: 0.05em;
+            text-align: center;
+        }
+
+        .hex-table td:first-child {
+            position: relative;
+            background: var(--cosmic-navy-raised);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 12.5px;
+            color: var(--text-secondary);
+        }
+
+        .hex-pos {
+            font-family: 'Spectral', serif;
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .hex-pos-marked {
+            display: inline-block;
+            padding: 3px 9px;
+            border-radius: 5px;
+            font-family: 'Spectral', serif;
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 0.04em;
+        }
+
+        .hex-pos-the { background: var(--champagne); color: var(--cosmic-navy-deep); }
+        .hex-pos-ung { background: transparent; border: 1px solid var(--champagne); color: var(--champagne); }
+
+        .hex-table tr.hex-moving td { background: rgba(184,146,90,0.06); }
+        .hex-table tr.hex-moving td:first-child { box-shadow: inset 3px 0 0 var(--bronze); }
+
+        .hex-mark {
+            margin-top: 5px;
+            font-weight: 600;
+            font-size: 11.5px;
+            color: var(--bronze-light);
+        }
+
+        .state-vuong { background-color: var(--champagne); color: var(--cosmic-navy-deep); font-weight: 700; text-align: center; }
+        .state-tuong { background-color: rgba(223,197,143,0.30); color: var(--ivory); font-weight: 600; text-align: center; }
+        .state-huu   { background-color: rgba(184,146,90,0.16); color: var(--text-secondary); text-align: center; }
+        .state-tu    { background-color: rgba(98,106,128,0.22); color: var(--text-muted); text-align: center; }
+        .state-tu_die{ background-color: transparent; color: var(--text-muted); font-style: italic; text-align: center; border-style: dashed; }
+
+        .error-msg {
+            color: var(--fire);
+            font-weight: 700;
+            text-align: center;
+            margin-top: 30px;
+            font-size: 14px;
+        }
+
+        /* =========================================================
+           TẦNG 3 — DYNAMICS
+           ========================================================= */
+
+        .dynamics-list { margin: 10px 0 0 0; padding: 0; list-style: none; }
+        .dynamics-list li {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 7px 0;
+            border-bottom: 1px dashed var(--border-subtle);
+            font-size: 12.5px;
+        }
+        .dynamics-list li:last-child { border-bottom: none; }
+        .dyn-role { color: var(--bronze-light); font-weight: 700; font-size: 11px; letter-spacing: 0.04em; flex-shrink: 0; width: 64px; }
+
+        .flow-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-subtle);
+            font-size: 13px;
+            flex-wrap: wrap;
+        }
+
+        .flow-node {
+            padding: 5px 10px;
+            border-radius: 5px;
+            background: var(--cosmic-navy-raised);
+            border: 1px solid var(--border-subtle);
+            font-weight: 600;
+        }
+
+        .shape-plate {
+            margin-top: 10px;
+            padding: 12px;
+            border-radius: 6px;
+            background: var(--cosmic-navy-raised);
+            text-align: center;
+            font-family: 'Spectral', serif;
+            font-size: 15px;
+            color: var(--ivory);
+            font-weight: 600;
+        }
+
+        .bureau-box {
+            margin-top: 14px;
+            border-radius: 8px;
+        }
+
+        .bureau-network {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0;
+            margin: 10px 0;
+        }
+
+        .bureau-node {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 12.5px;
+            color: var(--cosmic-navy-deep);
+        }
+
+        .bureau-link {
+            width: 26px;
+            height: 1px;
+            background: var(--border-strong);
+        }
+
+        .bureau-desc { font-size: 13px; color: var(--text-secondary); font-style: italic; margin-top: 8px; }
+
+        /* =========================================================
+           TAM HỢP CỤC · NGŨ HÀNH MAP  (element relationship visualization)
+           ========================================================= */
+
+        .element-map-card {
+            margin-top: 14px;
+            border: 1px solid var(--border-strong);
+            border-radius: 10px;
+            padding: 18px 16px;
+            background: linear-gradient(180deg, var(--cosmic-navy-raised), var(--cosmic-navy-soft));
+        }
+
+        .element-map-header .section-title { color: var(--ivory); }
+        .element-map-header .section-subtitle { color: var(--bronze-light); font-style: normal; letter-spacing: 0.08em; font-size: 11px; }
+
+        .element-map-intro {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin: 6px 0 16px 0;
+            line-height: 1.5;
+        }
+
+        /* --- compact six-line strip --- */
+
+        .six-line-strip {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            margin-bottom: 14px;
+            border-bottom: 1px dashed var(--border-subtle);
+        }
+
+        .strip-chip {
+            flex-shrink: 0;
+            min-width: 58px;
+            text-align: center;
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 6px 8px;
+            background: var(--cosmic-navy);
+        }
+
+        .strip-chip.strip-void { border-style: dashed; opacity: 0.55; }
+
+        .strip-branch {
+            font-family: 'Spectral', serif;
+            font-weight: 700;
+            font-size: 14px;
+            display: block;
+        }
+
+        .strip-meta { font-size: 9px; color: var(--text-muted); display: block; margin-top: 2px; }
+
+        .strip-tag {
+            display: inline-block;
+            margin-top: 3px;
+            font-family: 'Be Vietnam Pro', sans-serif;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 1px 5px;
+            border-radius: 3px;
+        }
+
+        .strip-the { background: var(--champagne); color: var(--cosmic-navy-deep); }
+        .strip-ung { border: 1px solid var(--champagne); color: var(--champagne); }
+
+        /* --- svg map --- */
+
+        .element-map-scroll {
+            overflow-x: auto;
+            margin-bottom: 16px;
+        }
+
+        .element-map-svg {
+            display: block;
+            width: 100%;
+            max-width: 560px;
+            height: auto;
+            margin: 0 auto;
+            min-width: 420px;
+        }
+
+        .element-map-svg text { font-family: 'Be Vietnam Pro', sans-serif; }
+
+        .node-hanzi {
+            font-family: 'Spectral', serif;
+            font-weight: 700;
+            fill: var(--ivory);
+            paint-order: stroke;
+            stroke: var(--cosmic-navy-deep);
+            stroke-width: 3px;
+            stroke-linejoin: round;
+        }
+        .node-caption { font-size: 9px; fill: var(--text-secondary); }
+        .node-badges { font-family: 'Be Vietnam Pro', sans-serif; font-size: 7.5px; fill: var(--champagne); font-weight: 700; letter-spacing: 0.01em; }
+        .element-node-label { font-family: 'Spectral', serif; font-size: 15px; font-weight: 700; fill: var(--cosmic-navy-deep); }
+
+        .sanhe-label { font-family: 'Be Vietnam Pro', sans-serif; font-size: 10px; fill: var(--champagne); font-weight: 700; letter-spacing: 0.02em; }
+        .rel-edge-label { font-family: 'Be Vietnam Pro', sans-serif; font-size: 8px; fill: var(--text-secondary); font-weight: 600; }
+
+        .element-map-svg .element-node circle,
+        .element-map-svg .branch-node circle { cursor: pointer; }
+
+        .element-map-svg .element-node,
+        .element-map-svg .branch-node,
+        .element-map-svg .sanhe-edge,
+        .element-map-svg .gen-edge,
+        .element-map-svg .ctrl-edge,
+        .element-map-svg .rel-edge,
+        .element-map-svg .rel-edge-label,
+        .element-map-svg .sanhe-label {
+            transition: opacity 0.15s ease;
+        }
+
+        .element-map-svg.hovering .element-node,
+        .element-map-svg.hovering .branch-node,
+        .element-map-svg.hovering .sanhe-edge,
+        .element-map-svg.hovering .gen-edge,
+        .element-map-svg.hovering .ctrl-edge,
+        .element-map-svg.hovering .rel-edge,
+        .element-map-svg.hovering .rel-edge-label,
+        .element-map-svg.hovering .sanhe-label {
+            opacity: 0.18;
+        }
+
+        .element-map-svg.hovering .hl-target { opacity: 1; }
+
+        /* --- formation impact panel --- */
+
+        .formation-panel { margin-top: 12px; }
+
+        .formation-grid {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 14px;
+            align-items: start;
+            margin: 8px 0;
+        }
+
+        .formation-label {
+            font-size: 10px;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .formation-list { margin: 0; padding-left: 16px; font-size: 12.5px; }
+        .formation-list li { margin-bottom: 3px; }
+
+        .awaiting-box {
+            margin-top: 12px;
+            font-size: 12px;
+            color: var(--text-muted);
+            font-style: italic;
+            border-style: dashed;
+        }
+
+        /* --- time environment --- */
+
+        .time-env-box { margin-top: 12px; }
+
+        .time-env-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-top: 8px;
+            font-size: 12.5px;
+        }
+
+        /* --- legend --- */
+
+        .legend-box { margin-top: 12px; }
+
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 10px;
+        }
+
+        .legend-title {
+            font-size: 10px;
+            letter-spacing: 0.07em;
+            color: var(--bronze-light);
+            margin-bottom: 7px;
+            font-weight: 700;
+        }
+
+        .legend-chip {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--cosmic-navy-deep);
+            margin: 0 4px 5px 0;
+        }
+
+        .legend-chip.legend-void { background: transparent; border: 1px dashed var(--text-muted); color: var(--text-muted); }
+        .legend-chip.legend-moving { background: transparent; border: 1px solid var(--bronze); color: var(--bronze-light); }
+        .legend-chip.legend-the { background: var(--champagne); color: var(--cosmic-navy-deep); }
+        .legend-chip.legend-ung { background: transparent; border: 1px solid var(--champagne); color: var(--champagne); }
+
+        .legend-line {
+            display: inline-block;
+            width: 20px;
+            height: 0;
+            border-top: 2px solid;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+
+        .legend-gen { border-color: var(--bronze-light); opacity: 0.7; }
+        .legend-ctrl { border-color: var(--fire); border-top-style: dashed; }
+        .legend-sanhe { border-color: var(--champagne); }
+        .legend-relthe { border-color: var(--ivory); border-top-style: dotted; }
+
+        .legend-dim {
+            display: block;
+            font-size: 10.5px;
+            color: var(--text-muted);
+            font-style: italic;
+            margin-top: 4px;
+        }
+
+        /* =========================================================
+           TẦNG 4 — RESPONSE WINDOW TIMELINE
+           ========================================================= */
+
+        .timeline {
+            position: relative;
+            margin-top: 14px;
+            padding-left: 18px;
+            border-left: 1px dashed var(--border-strong);
+        }
+
+        .timeline-item { position: relative; margin-bottom: 16px; }
+        .timeline-item:last-child { margin-bottom: 0; }
+
+        .timeline-marker {
+            position: absolute;
+            left: -23px;
+            top: 6px;
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            border: 2px solid var(--cosmic-navy);
+        }
+
+        .timeline-card {
+            background: var(--cosmic-navy-soft);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 12px 14px;
+        }
+
+        .timeline-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+        }
+
+        .timeline-timing { font-family: 'Spectral', serif; font-weight: 600; font-size: 14px; color: var(--ivory); }
+
+        .timeline-tag {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            padding: 3px 9px;
+            border-radius: 20px;
+            border: 1px solid;
+        }
+
+        .timeline-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.55; }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10.5px;
+            color: var(--text-muted);
+            margin-top: 26px;
+            border-top: 1px dashed var(--border-subtle);
+            padding-top: 12px;
+            letter-spacing: 0.03em;
+        }
+
+        /* =========================================================
+           TAB 2 — CHEATSHEET (reuses report tokens)
+           ========================================================= */
+
+        #tab2 {
+            min-height: calc(100vh - 56px);
+            padding: 36px 24px;
+            justify-content: center;
+            overflow-y: auto;
+            display: flex;
+            position: relative;
+            z-index: 1;
+        }
+
+        #tab2 .subtitle {
+            text-align: center;
+            font-style: italic;
+            font-size: 13.5px;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+
+        #tab2 .section-title-static {
+            color: var(--ivory);
+            font-size: 14.5px;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            margin-top: 26px;
+            margin-bottom: 12px;
+            background-color: var(--cosmic-navy-soft);
+            padding: 9px 14px;
+            border-left: 3px solid var(--bronze);
+            border-radius: 0 6px 6px 0;
+        }
+
+        #tab2 table { font-size: 12.5px; }
+        #tab2 th, #tab2 td { padding: 9px; }
+        #tab2 .box { font-size: 12.5px; }
+        #tab2 ul { margin: 6px 0; padding-left: 18px; }
+        #tab2 li { margin-bottom: 5px; }
+
+        /* =========================================================
+           RESPONSIVE
+           ========================================================= */
+
+        @media screen and (max-width: 900px) {
+            .nav-brand-mini { display: none; }
+            .drawer-toggle { display: block; }
+
+            .top-nav { padding: 0 10px; gap: 10px; }
+            .nav-tabs { margin-left: 0; flex: 1; justify-content: center; }
+            .tab-button { padding: 9px 12px; font-size: 11px; }
+
+            #tab1.active { display: flex; height: calc(100vh - 56px); }
+
+            .sidebar {
+                position: fixed;
+                top: 56px;
+                bottom: 0;
+                left: 0;
+                width: 84vw;
+                max-width: 340px;
+                transform: translateX(-100%);
+                transition: transform 0.25s ease;
+                box-shadow: 20px 0 40px rgba(0,0,0,0.4);
+            }
+
+            .sidebar.drawer-open { transform: translateX(0); }
+
+            .sidebar-overlay.drawer-open { display: block; }
+
+            .main-content { padding: 18px 12px; }
+
+            .grid-2 { grid-template-columns: 1fr; }
+
+            .report { width: 100%; padding: 22px 16px; min-height: 0; }
+
+            h1.report-title { font-size: 21px; }
+
+            table, thead, tbody, tr { display: block; width: 100%; }
+            th { display: none; }
+
+            .hex-table tr {
+                display: flex;
+                flex-direction: column;
+                border: 1px solid var(--border-subtle);
+                border-radius: 8px;
+                margin-bottom: 10px;
+                overflow: hidden;
+            }
+
+            .hex-table tr td {
+                display: block;
+                width: auto;
+                border: none;
+                border-bottom: 1px dashed var(--border-subtle);
+                padding: 9px 12px;
+                text-align: left;
+            }
+
+            .hex-table tr td:last-child { border-bottom: none; }
+
+            .hex-table tr td:first-child {
+                background: var(--cosmic-navy-raised);
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .hex-table tr td:first-child::before {
+                content: 'HÀO';
+                font-size: 10px;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                color: var(--text-muted);
+            }
+
+            .hex-table tr td[data-label]::before {
+                content: attr(data-label);
+                display: block;
+                font-size: 10px;
+                font-weight: 700;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+                color: var(--text-muted);
+                margin-bottom: 3px;
+            }
+
+            #tab2 table, #tab2 thead, #tab2 tbody, #tab2 tr, #tab2 th, #tab2 td { display: revert; }
+            #tab2 table { display: table; overflow-x: auto; }
+            #tab2 { padding: 16px 10px; }
+
+            .xk-dial { width: 160px; height: 160px; }
+            .xk-node { transform: rotate(calc(var(--i) * 30deg)) translate(64px) rotate(calc(var(--i) * -30deg)); }
+
+            .legend-grid { grid-template-columns: 1fr; }
+            .formation-grid, .time-env-grid { grid-template-columns: 1fr; }
+            .element-map-svg { min-width: 480px; }
+        }
+
+        /* =========================================================
+           PRINT
+           ========================================================= */
+
+        @media print {
+            @page { size: A4 portrait; margin: 14mm; }
+
+            html, body {
+                background: var(--cosmic-navy-deep) !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .cosmic-backdrop,
+            .top-nav,
+            .sidebar,
+            .sidebar-overlay,
+            #tab2 { display: none !important; }
+
+            #tab1, .main-content { height: auto !important; overflow: visible !important; display: block !important; padding: 0 !important; }
+
+            .report {
+                width: 100%;
+                min-height: 0;
+                box-shadow: none;
+                border: none;
+                padding: 0;
+                margin: 0 auto;
+            }
+
+            .box, .timeline-item, .bureau-box, .question-box, .formation-panel, .time-env-box, .legend-box, .awaiting-box { break-inside: avoid; }
+            .element-map-card { break-inside: avoid; }
+            .element-map-scroll { overflow: visible; }
+            .element-map-svg { min-width: 0; max-width: 100%; }
+            .six-line-strip { overflow: visible; flex-wrap: wrap; }
+            .section-header { break-after: avoid; }
+            table { break-inside: auto; }
+            tr { break-inside: avoid; }
+            thead { display: table-header-group; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="cosmic-backdrop" aria-hidden="true">
+        <svg width="100%" height="220" viewBox="0 0 800 220" preserveAspectRatio="xMaxYMin slice" style="top:0; right:0;">
+            <circle cx="700" cy="40" r="90" fill="none" stroke="#B8925A" stroke-opacity="0.18" stroke-dasharray="2 6"/>
+            <circle cx="700" cy="40" r="130" fill="none" stroke="#DFC58F" stroke-opacity="0.10" stroke-dasharray="2 6"/>
+            <circle cx="120" cy="10" r="2" fill="#DFC58F" opacity="0.5"/>
+            <circle cx="260" cy="70" r="1.5" fill="#DFC58F" opacity="0.4"/>
+            <circle cx="400" cy="20" r="1.5" fill="#B8925A" opacity="0.5"/>
+        </svg>
+    </div>
+
+    <!-- =========================================================
+         TOP NAVIGATION
+         ========================================================= -->
+
+    <nav class="top-nav">
+        <button class="drawer-toggle" onclick="toggleSidebar()" aria-label="Mở menu">☰</button>
+        <div class="nav-brand-mini">COSMIC BUNNY</div>
+
+        <div class="nav-tabs">
+            <button class="tab-button active" onclick="switchTab('tab1', this)">
+                Bản Đồ Kiến Trúc
+            </button>
+
+            <button class="tab-button" onclick="switchTab('tab2', this)">
+                Cheatsheet
+            </button>
+        </div>
+    </nav>
+
+
+    <!-- =========================================================
+         TAB 1 — BẢN ĐỒ KIẾN TRÚC
+         ========================================================= -->
+
+    <div id="tab1" class="tab-content active">
+
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <aside class="sidebar" id="sidebar">
+
+            <div class="brand-lockup">
+                <svg class="brand-mark" viewBox="0 0 60 60" fill="none">
+                    <circle cx="42" cy="18" r="20" fill="none" stroke="#B8925A" stroke-opacity="0.4" stroke-dasharray="1.5 4"/>
+                    <path d="M30 6 A16 16 0 1 0 30 38 A12 12 0 1 1 30 6 Z" fill="#DFC58F"/>
+                    <circle cx="12" cy="46" r="1.4" fill="#DFC58F"/>
+                    <circle cx="50" cy="50" r="1" fill="#B8925A"/>
+                </svg>
+                <div class="brand-name">COSMIC<br>BUNNY</div>
+            </div>
+
+            <div class="brand-tagline">LẮNG NGHE · ĐỊNH HƯỚNG · ĐỒNG HÀNH</div>
+
+            <div class="product-name">Lục Hào Architecture</div>
+            <div class="sidebar-divider"></div>
+
+            <label class="field-label" for="jsonInput">JSON DATA</label>
+            <textarea id="jsonInput" spellcheck="false"></textarea>
+
+            <div class="action-buttons">
+                <button class="btn-small" onclick="pasteJson()">📥 Paste</button>
+                <button class="btn-small" onclick="copyJson()">📋 Copy</button>
+                <button class="btn-small" onclick="clearJson()">🧹 Clear</button>
+            </div>
+
+            <input type="file" id="jsonFileInput" accept=".json,application/json" style="display:none;" onchange="handleJsonFileUpload(event)">
+
+            <button class="btn-print" style="margin-top:0; margin-bottom:8px;" onclick="triggerJsonFileUpload()">
+                📁 Tải File JSON
+            </button>
+
+            <button class="btn-print" style="margin-top:0; margin-bottom:0;" onclick="copyAiPrompt()">
+                📋 Copy Prompt Tạo JSON (AI)
+            </button>
+
+            <div id="convertStatus" class="convert-status" style="display:none;"></div>
+
+            <button class="btn-main" style="margin-top:12px;" onclick="renderArchitecture()">
+                Xuất Bản Đồ Kiến Trúc
+            </button>
+
+            <button class="btn-print" onclick="window.print()">
+                🖨️ In / Lưu PDF
+            </button>
+
+            <div class="sidebar-foot">Cosmic Bunny · Lục Hào Architecture</div>
+
+        </aside>
+
+
+        <main class="main-content">
+
+            <div class="report" id="a4Content"></div>
+
+        </main>
+
+    </div>
+
+
+    <!-- =========================================================
+         TAB 2 — CHEATSHEET
+         ========================================================= -->
+
+    <div id="tab2" class="tab-content">
+
+        <div class="report">
+
+            <div class="report-header">
+                <div class="report-eyebrow">COSMIC BUNNY · LỤC HÀO ARCHITECTURE</div>
+                <h1 class="report-title">Bản Đồ Kiến Trúc Lục Hào (Liu Yao)</h1>
+            </div>
+
+            <div class="subtitle">
+                Cheatsheet hệ thống hóa dành cho dịch vụ tư vấn Cosmic Bunny
+            </div>
+
+
+            <!-- TẦNG 1 -->
+
+            <div class="section-title-static">
+                TẦNG 1: MÔI TRƯỜNG &amp; KHUNG THỜI GIAN (Ngoại cảnh)
+            </div>
+
+            <div class="grid-2">
+
+                <div class="box">
+                    <span class="highlight-text">Tứ Trụ (Pillars)</span>
+                    <br><br>
+                    - <b>Tháng (Nguyệt Kiến) &amp; Ngày (Nhật Kiến)</b>:
+                    Hai vị vua chi phối sinh mệnh vạn vật trong quẻ.
+                    <br>
+                    - <b>Vượng/Tướng</b>:
+                    Hào được Tháng/Ngày sinh hoặc trùng hành (Cực mạnh).
+                    <br>
+                    - <b>Tù/Tử/Hưu</b>:
+                    Hào bị Tháng/Ngày khắc chế (Yếu ớt, thất bại).
+                </div>
+
+                <div class="box">
+                    <span class="highlight-text">Tuần Không (Xun Kong)</span>
+                    <br>
+                    - Trạng thái "Hố Đen / Trống Rỗng".
+                    <br>
+                    - Hào rơi vào Tuần Không:
+                    Sự việc lảng tránh, ảo ảnh, bánh vẽ, bất lực,
+                    tạm thời vô tác dụng.
+                    <br>
+                    - Cách giải:
+                    Đợi đến ngày/tháng <b>Xuất Không</b> (Lấp đầy)
+                    hoặc <b>Xung Không</b>.
+                </div>
+
+            </div>
+
+
+            <!-- TẦNG 2 -->
+
+            <div class="section-title-static">
+                TẦNG 2: CẤU TRÚC LÕI CỦA QUẺ (Bố cục nhân vật)
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Vị Trí Hào</th>
+                        <th>Thế / Ứng</th>
+                        <th>Lục Thân (Vai diễn)</th>
+                        <th>Lục Thú (Tâm lý/Thái độ)</th>
+                        <th>Hào Động/Biến</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Hào 6 (Trên)</td>
+                        <td rowspan="6" style="vertical-align: middle; text-align: center; line-height: 1.8;">
+                            <b style="color:var(--champagne);">THẾ (Shi)</b><br>
+                            Đại diện cho Bản thân / Phe mình / Điểm tụ khí.
+                            <br><br>
+                            <b style="color:var(--champagne);">ỨNG (Ying)</b><br>
+                            Đại diện cho Đối phương / Môi trường / Đối tác.
+                        </td>
+                        <td><b>Phụ Mẫu</b> (Nhà cửa, Giấy tờ, Cha mẹ)</td>
+                        <td><b>Thanh Long</b> (Vui vẻ, thuận lợi, chính đáng)</td>
+                        <td><b>Tĩnh (Static)</b>: Hiện trạng.</td>
+                    </tr>
+                    <tr>
+                        <td>Hào 5</td>
+                        <td><b>Huynh Đệ</b> (Bạn bè, Đối thủ, Hao tài)</td>
+                        <td><b>Chu Tước</b> (Giao tiếp, tranh cãi, tin tức)</td>
+                        <td rowspan="2" style="vertical-align: middle;">
+                            <b>Động (Moving)</b>:<br>
+                            Biến cố nổ ra, tạo ra <i>Hào Biến (Changed)</i> → Kết quả.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Hào 4</td>
+                        <td><b>Tử Tôn</b> (Con cái, Sáng tạo, Giải cứu)</td>
+                        <td><b>Câu Trần</b> (Cũ kỹ, trì trệ, dậm chân)</td>
+                    </tr>
+                    <tr>
+                        <td>Hào 3</td>
+                        <td><b>Thê Tài</b> (Tiền bạc, Tài sản, Vợ)</td>
+                        <td><b>Đằng Xà</b> (Lo âu, rối rắm, mất ngủ)</td>
+                        <td><b>Biến Tiến</b>: Năng lượng mạnh lên.</td>
+                    </tr>
+                    <tr>
+                        <td>Hào 2</td>
+                        <td><b>Quan Quỷ</b> (Áp lực, Rắc rối, Công việc)</td>
+                        <td><b>Bạch Hổ</b> (Quyết liệt, mệt mỏi, tổn thương)</td>
+                        <td><b>Biến Thoái/Tuyệt</b>: Cạn kiệt, kết thúc.</td>
+                    </tr>
+                    <tr>
+                        <td>Hào 1 (Dưới)</td>
+                        <td colspan="3" style="text-align: center; color: var(--text-muted);">
+                            <i>*Lục Thân và Lục Thú thay đổi luân phiên theo ma trận từng quẻ, không cố định.</i>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+
+            <!-- TẦNG 3 -->
+
+            <div class="section-title-static">
+                TẦNG 3: ĐỘNG LỰC HỌC TƯƠNG TÁC (Cơ chế sinh khắc)
+            </div>
+
+            <div class="grid-2">
+
+                <div class="box">
+                    <span class="highlight-text">Dụng Thần &amp; Bộ 3 Cốt Lõi</span>
+                    <ul>
+                        <li><b>DỤNG THẦN (Mục tiêu):</b> Tùy câu hỏi mà chọn (Tiền → Tài, Tình → Quỷ/Tài...).</li>
+                        <li><b>Nguyên Thần (Đồng minh):</b> Hào sinh ra Dụng Thần. Nguồn lực cứu vãn.</li>
+                        <li><b>Kỵ Thần (Kẻ thù):</b> Hào khắc/giết Dụng Thần. Tạo ra sự cản trở.</li>
+                    </ul>
+                </div>
+
+                <div class="box">
+                    <span class="highlight-text">Đại Cục (Shape)</span>
+                    <ul>
+                        <li><b>Lục Xung:</b> Va đập, chia ly, đổ vỡ nhanh, biến động.</li>
+                        <li><b>Lục Hợp:</b> Gắn kết, ràng buộc, nhùng nhằng, lâu dài.</li>
+                        <li><b>Du Hồn:</b> Bấp bênh, làm thử nghiệm, không dứt khoát.</li>
+                    </ul>
+                </div>
+
+            </div>
+
+            <div class="box" style="margin-top: 14px;">
+                <span class="highlight-text">Tam Hợp Cục (The Bureau)</span>
+                <br>
+                Sự liên kết của 3 Địa chi tạo thành một THẾ LỰC / HỆ THỐNG quy mô lớn.
+                <br>
+                Nếu Tam Hợp sinh Thế → Được hậu thuẫn lớn.
+                Nếu Tam Hợp khắc Thế → Gặp rắc rối mang tính dây chuyền, bị hãm hại.
+                <br>
+                (Đang thiếu 1 chữ thì gọi là Tam Hợp Hụt — chờ đến tháng/ngày đó sẽ sập bẫy hoặc thành công).
+            </div>
+
+
+            <!-- TẦNG 4 -->
+
+            <div class="section-title-static">
+                TẦNG 4: ỨNG KỲ THỜI GIAN (Response Windows)
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Loại Ứng Kỳ (Timing)</th>
+                        <th>Dấu hiệu nhận biết trong Raw Data</th>
+                        <th>Ý nghĩa hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><b>Ứng kỳ Cát Lợi (Favorable)</b></td>
+                        <td>Phùng trị (Value day), Phùng Hợp, Phùng Xung (Clash day rouses)</td>
+                        <td>Thời điểm tiền về, chốt deal, đạt được mục tiêu. (Rất tốt để tung sản phẩm, ra quyết định).</td>
+                    </tr>
+                    <tr>
+                        <td><b>Ứng kỳ Lấp Đầy (Completion)</b></td>
+                        <td>Xuất Không (Void clears), Phá Mộ, Tam hợp thành Cục</td>
+                        <td>Kết thúc sự lảng tránh. Bẫy sập (nếu là Kỵ thần cục) hoặc Quả chín (nếu là Nguyên thần cục).</td>
+                    </tr>
+                    <tr>
+                        <td><b>Ứng kỳ Cản Trở (Obstacle)</b></td>
+                        <td>Gián hào động (Obstruction), Kỵ thần lâm trị</td>
+                        <td>Thời điểm rắc rối bùng phát, cản trở xuất hiện, dễ cãi vã hoặc hao tài. Cần phòng thủ.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="report-footer">
+                COSMIC BUNNY · Lục Hào Architecture
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================================
+         JAVASCRIPT — LOGIC LAYER PRESERVED AS SOURCE OF TRUTH
+         ========================================================= -->
+
+    <script>
+
+        /* =========================================================
+           TAB SWITCHING
+           ========================================================= */
+
+        function switchTab(tabId, button) {
+
+            document.querySelectorAll('.tab-content')
+                .forEach(tab => { tab.classList.remove('active'); });
+
+            document.querySelectorAll('.tab-button')
+                .forEach(btn => { btn.classList.remove('active'); });
+
+            document.getElementById(tabId).classList.add('active');
+            button.classList.add('active');
+        }
+
+
+        /* =========================================================
+           SIDEBAR DRAWER (mobile)
+           ========================================================= */
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('drawer-open');
+            document.getElementById('sidebarOverlay').classList.toggle('drawer-open');
+        }
+
+
+        /* =========================================================
+           TAB 1 — DATA / UTILS
+           ========================================================= */
+
+        const elementColors = {
+            'Mộc': 'var(--wood)',
+            'Hỏa': 'var(--fire)',
+            'Thổ': 'var(--earth)',
+            'Kim': 'var(--metal)',
+            'Thủy': 'var(--water)',
+            'Khuyết': '#4A5266'
+        };
+
+        const twelveBranches = [
+            'Tý', 'Sửu', 'Dần', 'Mão', 'Thìn', 'Tỵ',
+            'Ngọ', 'Mùi', 'Thân', 'Dậu', 'Tuất', 'Hợi'
+        ];
+
+        /* static vocabulary — Vietnamese labels for hào position (no Hán tự on the diagram) */
+        const haoLabel = {
+            1: 'Hào 1', 2: 'Hào 2', 3: 'Hào 3', 4: 'Hào 4', 5: 'Hào 5', 6: 'Hào 6'
+        };
+
+
+        /* =========================================================
+           AI CONVERSION PROMPT
+           (copied verbatim to clipboard via the "Copy Prompt" button;
+            the person appends RAW DATA + customer question themselves,
+            runs it through an AI, and pastes the resulting JSON into
+            the JSON DATA box.)
+           ========================================================= */
+
+        const AI_CONVERSION_PROMPT =
+`Bạn là trợ lý chuyển đổi dữ liệu quẻ Lục Hào (Liu Yao) sang JSON cho hệ thống "Cosmic Bunny — Lục Hào Architecture".
+
+INPUT bạn sẽ nhận được (dán ngay sau phần hướng dẫn này):
+1. RAW DATA: dữ liệu quẻ Lục Hào dạng thô (tiếng Trung + pinyin) — gồm Pillars, quẻ gốc, 6 hào, Tam Hợp Cục, và một hoặc nhiều mục "Analysis — Topic: ..." (mỗi mục ứng với một chủ đề như Tài Lộc, Xuất Hành, Hôn Nhân...).
+2. CÂU HỎI CỦA KHÁCH: câu hỏi cụ thể bằng tiếng Việt mà khách hàng muốn hỏi.
+
+NHIỆM VỤ CỦA BẠN:
+- Đọc RAW DATA và CÂU HỎI CỦA KHÁCH.
+- Nếu RAW DATA có nhiều mục "Analysis — Topic", tự chọn ĐÚNG MỘT mục phù hợp nhất với ý định câu hỏi của khách. Nếu câu hỏi chạm tới nhiều chủ đề cùng lúc, chọn mục liên quan nhiều nhất và ghi chú trong questionContext những khía cạnh còn lại chưa được phân tích đầy đủ.
+- Dịch toàn bộ Hán tự sang tiếng Việt (Hán-Việt) đúng quy ước chuẩn: Thiên Can (Giáp Ất Bính Đinh Mậu Kỷ Canh Tân Nhâm Quý), Địa Chi (Tý Sửu Dần Mão Thìn Tỵ Ngọ Mùi Thân Dậu Tuất Hợi), Bát Quái Cung (Càn Khảm Cấn Chấn Tốn Ly Khôn Đoài), Lục Thân (Phụ Mẫu/Huynh Đệ/Tử Tôn/Thê Tài/Quan Quỷ), Lục Thú (Thanh Long/Chu Tước/Câu Trần/Đằng Xà/Bạch Hổ/Huyền Vũ), Vượng/Tướng/Hưu/Tù/Tử, và tên 64 quẻ Chu Dịch theo hệ thống Hán-Việt tiêu chuẩn.
+- TUYỆT ĐỐI KHÔNG để sót chữ Hán nào trong JSON đầu ra — toàn bộ phải là tiếng Việt.
+- Chỉ xuất ra DUY NHẤT một object JSON hợp lệ đúng theo schema bên dưới. KHÔNG thêm lời giải thích, KHÔNG dùng markdown code fence (không có \`\`\`), KHÔNG thêm field nào ngoài schema.
+
+SCHEMA JSON (bắt buộc đúng tên field, đúng kiểu dữ liệu):
+{
+  "questionContext": string — diễn đạt lại câu hỏi của khách bằng tiếng Việt, có thể ghi chú chủ đề nào trong raw data đã được dùng để phân tích,
+  "hexagramName": string — tên quẻ Hán-Việt, có thể kèm dạng quẻ trong ngoặc, ví dụ "Lôi Sơn Tiểu Quá (Du Hồn)",
+  "palace": string — "Cung " + tên cung Hán-Việt, ví dụ "Cung Đoài",
+  "pillars": string — đúng định dạng "Năm X Y | Tháng X Y | Ngày X Y | Giờ X Y" với X = Thiên Can, Y = Địa Chi, cả hai viết Hán-Việt,
+  "xunKong": [string, string] — 2 Địa Chi đang Tuần Không, viết Hán-Việt,
+  "lines": [
+    {
+      "pos": number (1-6, 1 là hào dưới cùng, 6 là hào trên cùng — bắt buộc đủ cả 6 phần tử),
+      "role": string — Lục Thân Hán-Việt,
+      "branch": string — Địa Chi Hán-Việt, PHẢI đúng chính tả một trong 12 chữ: Tý, Sửu, Dần, Mão, Thìn, Tỵ, Ngọ, Mùi, Thân, Dậu, Tuất, Hợi,
+      "beast": string — Lục Thú Hán-Việt,
+      "state": string — một trong: Vượng, Tướng, Hưu, Tù, Tử,
+      "isMoving": boolean — true nếu hào này động (có hào biến),
+      "mark": string — PHẢI chứa đúng chuỗi con "THẾ" nếu là hào Thế, "ỨNG" nếu là hào Ứng; nếu hào động, mô tả hào biến ở đây (ví dụ "Động biến Tỵ (Hỏa) Tướng (Hóa Tuyệt)"); nếu không phải Thế/Ứng/động thì để chuỗi rỗng ""
+    }
+  ],
+  "dynamics": {
+    "yongShen": { "name": string, "state": string } — Dụng Thần của chủ đề đã chọn, ghi rõ nếu là Phục Thần / vô dụng,
+    "yuanShen": { "name": string, "state": string } — Nguyên Thần; nếu không xác định được, ghi "—",
+    "jiShen": { "name": string, "state": string } — Kỵ Thần; nếu không xác định được, ghi "—",
+    "shiYingAction": { "from": string, "to": string, "type": "sinh" | "khắc" | "hòa" } — quan hệ Thế→Ứng, ví dụ from: "Thế (Hỏa)", to: "Ứng (Thổ)",
+    "shape": string — dạng quẻ Hán-Việt, ví dụ "Du Hồn",
+    "bureaus": [
+      {
+        "element": "Mộc" | "Hỏa" | "Thổ" | "Kim" | "Thủy",
+        "branches": [string, string, string] — 3 Địa Chi của Tam Hợp Cục, Hán-Việt,
+        "missing": string | null — Địa Chi còn thiếu nếu Cục chưa đủ, null nếu đã đủ,
+        "desc": string — mô tả ngắn gọn bằng tiếng Việt, có thể giữ mã trích dẫn gốc (ví dụ YI05:577) nếu raw data có
+      }
+    ] — để mảng rỗng [] nếu raw data không có Tam Hợp Cục nào
+  },
+  "responseWindows": [
+    { "timing": string — ví dụ "Ngày Tỵ" hoặc "Tháng Dậu", "type": "Favorable" | "Obstacle" | "Completion", "desc": string — mô tả tiếng Việt, có thể giữ mã trích dẫn gốc }
+  ] — lấy từ mục Response Windows của chủ đề đã chọn; nếu không có, để mảng rỗng []
+}
+
+QUY TẮC BẮT BUỘC:
+- KHÔNG bịa thêm dữ liệu không có trong RAW DATA. Nếu một field không xác định được, dùng "—" hoặc mảng rỗng, không suy đoán hay tự sáng tác kết luận huyền học.
+- "branch" trong lines và trong bureaus PHẢI đúng chính tả một trong 12 Địa Chi liệt kê ở trên.
+- "mark" là cách DUY NHẤT hệ thống nhận diện Thế/Ứng — bắt buộc đúng chuỗi con "THẾ"/"ỨNG", viết hoa chính xác.
+- Giữ nguyên các mã trích dẫn kiểu YI05:577, YI03:5247... trong phần desc nếu RAW DATA có, để có thể tra lại nguồn.
+- Chỉ xuất JSON, không có bất kỳ văn bản nào khác trước hoặc sau JSON.
+
+===== DÁN RAW DATA VÀ CÂU HỎI CỦA KHÁCH BÊN DƯỚI =====
+
+RAW DATA:
+[dán raw data ở đây]
+
+CÂU HỎI CỦA KHÁCH:
+[dán câu hỏi khách ở đây]`;
+
+
+        /* =========================================================
+           SIDEBAR ACTIONS
+           ========================================================= */
+
+        function clearJson() {
+            document.getElementById('jsonInput').value = '';
+            showConvertStatus('Đã xóa nội dung.', 'info');
+        }
+
+        function copyJson() {
+            try {
+                let textarea = document.getElementById('jsonInput');
+                textarea.select();
+                document.execCommand('copy');
+                showConvertStatus('Đã copy vào clipboard.', 'success');
+            } catch (err) {
+                showConvertStatus('Không thể copy tự động. Vui lòng chọn văn bản và Copy thủ công.', 'error');
+            }
+        }
+
+        async function pasteJson() {
+            try {
+                const text = await navigator.clipboard.readText();
+                document.getElementById('jsonInput').value = text;
+                showConvertStatus('Đã dán nội dung từ clipboard.', 'success');
+            }
+            catch (err) {
+                showConvertStatus(
+                    'Trình duyệt không cho phép dán tự động. Vui lòng ấn Ctrl+V hoặc Cmd+V vào ô chữ.',
+                    'error'
+                );
+            }
+        }
+
+        /* ---- inline status message (no browser dialogs — alert()/prompt()
+               are unreliable inside sandboxed previews, so all feedback
+               lives in the page itself) ---- */
+
+        function showConvertStatus(msg, type) {
+            const el = document.getElementById('convertStatus');
+            el.textContent = msg;
+            el.className = 'convert-status status-' + type;
+            el.style.display = 'block';
+        }
+
+        /* ---- load a .json file from disk into the JSON DATA textarea ---- */
+
+        function triggerJsonFileUpload() {
+            document.getElementById('jsonFileInput').click();
+        }
+
+        function handleJsonFileUpload(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const text = e.target.result;
+                    JSON.parse(text); // validate it's actually valid JSON before accepting
+                    document.getElementById('jsonInput').value = text;
+                    showConvertStatus(`Đã tải "${file.name}" vào ô JSON DATA.`, 'success');
+                } catch (err) {
+                    showConvertStatus(`File "${file.name}" không phải JSON hợp lệ: ${err.message}`, 'error');
+                }
+            };
+            reader.onerror = function () {
+                showConvertStatus('Không thể đọc file. Vui lòng thử lại.', 'error');
+            };
+            reader.readAsText(file, 'utf-8');
+
+            event.target.value = ''; // allow re-selecting the same file name later
+        }
+
+        /* ---- copy the AI conversion prompt to clipboard ---- */
+
+        function copyTextToClipboard(text) {
+            try {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.left = '-9999px';
+                ta.style.top = '0';
+                document.body.appendChild(ta);
+                ta.focus();
+                ta.select();
+                const ok = document.execCommand('copy');
+                document.body.removeChild(ta);
+                return ok;
+            } catch (err) {
+                return false;
+            }
+        }
+
+        function copyAiPrompt() {
+            const ok = copyTextToClipboard(AI_CONVERSION_PROMPT);
+            if (ok) {
+                showConvertStatus(
+                    '✅ Đã copy prompt vào clipboard. Dán vào AI, thêm RAW DATA + câu hỏi khách vào cuối, rồi dán JSON kết quả vào ô JSON DATA ở trên.',
+                    'success'
+                );
+            } else {
+                showConvertStatus('Không thể copy tự động — vui lòng thử lại hoặc copy thủ công từ console.', 'error');
+            }
+        }
+
+
+
+
+        /* =========================================================
+           UTILS (preserved logic)
+           ========================================================= */
+
+        function getElement(branch) {
+            if (['Tý', 'Hợi'].includes(branch)) return 'Thủy';
+            if (['Sửu', 'Thìn', 'Mùi', 'Tuất'].includes(branch)) return 'Thổ';
+            if (['Dần', 'Mão'].includes(branch)) return 'Mộc';
+            if (['Tỵ', 'Ngọ'].includes(branch)) return 'Hỏa';
+            if (['Thân', 'Dậu'].includes(branch)) return 'Kim';
+            return 'Khuyết';
+        }
+
+        function getStateClass(state) {
+            let s = state.toLowerCase();
+            if (s.includes('vượng')) return 'state-vuong';
+            if (s.includes('tướng')) return 'state-tuong';
+            if (s.includes('hưu')) return 'state-huu';
+            if (s.includes('tù')) return 'state-tu';
+            if (s.includes('tử')) return 'state-tu_die';
+            return '';
+        }
+
+        function getArrow(type) {
+            if (type === 'sinh') {
+                return `<span style="color: var(--sinh); font-weight: bold;">➔ (SINH)</span>`;
+            }
+            if (type === 'khắc') {
+                return `<span style="color: var(--khac); font-weight: bold;">➔ (KHẮC)</span>`;
+            }
+            return `<span style="color: var(--hoa); font-weight: bold;">➔ (TỶ HÒA)</span>`;
+        }
+
+        function cleanJsonString(rawStr) {
+            let str = rawStr.trim();
+            if (str.startsWith("```")) {
+                str = str.replace(/^```(json)?/, '').replace(/```$/, '').trim();
+            }
+            return str;
+        }
+
+        function highlightXunKong(text, xkList) {
+            if (!text) return '';
+            let res = text;
+            xkList.forEach(xk => {
+                if (xk) {
+                    const regex = new RegExp(xk, 'g');
+                    res = res.replace(regex, `<span class="xunkong-text">${xk}</span>`);
+                }
+            });
+            return res;
+        }
+
+        /* new, purely presentational — label for response-window type */
+        function responseTypeLabel(type) {
+            if (type === 'Favorable') return 'CÁT LỢI';
+            if (type === 'Obstacle') return 'CẢN TRỞ';
+            if (type === 'Completion') return 'LẤP ĐẦY';
+            return type;
+        }
+
+
+        /* =========================================================
+           TAM HỢP CỤC · NGŨ HÀNH MAP — builders
+           (pure presentation layer; consumes existing data.dynamics.bureaus,
+            data.lines, data.xunKong — invents no new relationships)
+           ========================================================= */
+
+        function buildBranchNodeSVG(x, y, branch, opts) {
+            opts = opts || {};
+            const r = opts.small ? 16 : 22;
+            const el = opts.element || getElement(branch);
+            const posLabel = opts.pos ? (haoLabel[opts.pos] || ('Hào ' + opts.pos)) : '';
+
+            let badges = [];
+            if (opts.mark && opts.mark.includes('THẾ')) badges.push('THẾ');
+            if (opts.mark && opts.mark.includes('ỨNG')) badges.push('ỨNG');
+            if (opts.isMoving) badges.push('Động');
+            if (opts.isVoid) badges.push('Không');
+            if (opts.isMissingFormation) badges.push('Thiếu');
+
+            const dashed = opts.isVoid || opts.isMissingFormation;
+
+            let g = `<g class="branch-node" data-element="${el}" ${opts.formationId ? `data-formation="${opts.formationId}"` : ''}>`;
+
+            g += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}"
+                     fill="${elementColors[el]}" fill-opacity="${dashed ? 0.14 : 0.8}"
+                     stroke="${elementColors[el]}" stroke-width="${dashed ? 1.6 : 2.2}" stroke-opacity="${dashed ? 0.9 : 1}"
+                     ${dashed ? 'stroke-dasharray="3 3"' : ''} />`;
+
+            g += `<text x="${x.toFixed(1)}" y="${(y + (opts.small ? 4 : 5)).toFixed(1)}" text-anchor="middle"
+                     class="node-hanzi" font-size="${opts.small ? 12 : 14}">${branch}</text>`;
+
+            if (posLabel) {
+                g += `<text x="${x.toFixed(1)}" y="${(y + r + 12).toFixed(1)}" text-anchor="middle" class="node-caption">${posLabel}</text>`;
+            }
+
+            if (badges.length) {
+                const badgeY = y + r + (posLabel ? 24 : 13);
+                g += `<text x="${x.toFixed(1)}" y="${badgeY.toFixed(1)}" text-anchor="middle" class="node-badges">${badges.join(' · ')}</text>`;
+            }
+
+            g += `</g>`;
+            return g;
+        }
+
+        function buildFormationPanel(b, nodes, idx, xk) {
+            const participantsHtml = nodes.map(n => {
+                return `<li>${highlightXunKong(n.branch, xk)}${n.isMissing ? ' <span class="missing-branch">(thiếu — chưa xuất hiện)</span>' : ''}</li>`;
+            }).join('');
+
+            return `
+                <div class="box formation-panel" style="border-color:${elementColors[b.element]};" data-formation-panel="f${idx}">
+                    <span class="highlight-text">FORMATION IMPACT — Tam Hợp ${b.element} Cục</span>
+                    <div class="formation-grid">
+                        <div>
+                            <div class="formation-label">ĐỊA CHI THAM GIA</div>
+                            <ul class="formation-list">${participantsHtml}</ul>
+                        </div>
+                        <div>
+                            <div class="formation-label">NGUYÊN TỐ KẾT QUẢ</div>
+                            <span class="element-badge" style="background-color:${elementColors[b.element]}">${b.element}</span>
+                        </div>
+                    </div>
+                    <div class="bureau-desc">${highlightXunKong(b.desc, xk)}</div>
+                </div>
+            `;
+        }
+
+        function buildTimeEnvironment(data, xk) {
+            const chunks = (data.pillars || '').split('|').map(s => s.trim());
+            const monthChunk = chunks.find(c => c.includes('Tháng')) || '—';
+            const dayChunk = chunks.find(c => c.includes('Ngày')) || '—';
+            const monthBranch = twelveBranches.find(b => monthChunk.includes(b));
+            const dayBranch = twelveBranches.find(b => dayChunk.includes(b));
+
+            function branchChip(branch) {
+                if (!branch) return '<span style="color:var(--text-muted);">—</span>';
+                const isVoid = xk.some(x => x.includes(branch));
+                return `<span class="element-badge" style="background-color:${elementColors[getElement(branch)]}">${branch}</span>`
+                    + (isVoid ? ' <span class="xunkong-text">Tuần Không</span>' : '');
+            }
+
+            return `
+                <div class="box time-env-box">
+                    <span class="highlight-text">TIME ENVIRONMENT · MÔI TRƯỜNG THÁNG / NGÀY</span>
+                    <div class="time-env-grid">
+                        <div>
+                            <div class="formation-label">NGUYỆT KIẾN — THÁNG</div>
+                            ${highlightXunKong(monthChunk, xk)} ${branchChip(monthBranch)}
+                        </div>
+                        <div>
+                            <div class="formation-label">NHẬT THẦN — NGÀY</div>
+                            ${highlightXunKong(dayChunk, xk)} ${branchChip(dayBranch)}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildSixLineStrip(data, xk) {
+            return `
+                <div class="six-line-strip">
+                    ${data.lines.map(line => {
+                        const el = getElement(line.branch);
+                        const isVoid = xk.some(x => x.includes(line.branch));
+                        let tag = '';
+                        if (line.mark.includes('THẾ')) tag = '<span class="strip-tag strip-the">THẾ</span>';
+                        else if (line.mark.includes('ỨNG')) tag = '<span class="strip-tag strip-ung">ỨNG</span>';
+                        return `
+                            <div class="strip-chip ${isVoid ? 'strip-void' : ''}">
+                                <span class="strip-branch" style="color:${elementColors[el]}">${line.branch}</span>
+                                <span class="strip-meta">${haoLabel[line.pos] || ('Hào ' + line.pos)}${line.isMoving ? ' · Động' : ''}</span>
+                                ${tag}
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        function buildElementMapLegend() {
+            return `
+                <div class="box legend-box">
+                    <span class="highlight-text">LEGEND</span>
+                    <div class="legend-grid">
+                        <div class="legend-group">
+                            <div class="legend-title">NGŨ HÀNH</div>
+                            <span class="legend-chip" style="background:${elementColors['Mộc']}">Mộc</span>
+                            <span class="legend-chip" style="background:${elementColors['Hỏa']}">Hỏa</span>
+                            <span class="legend-chip" style="background:${elementColors['Thổ']}">Thổ</span>
+                            <span class="legend-chip" style="background:${elementColors['Kim']}">Kim</span>
+                            <span class="legend-chip" style="background:${elementColors['Thủy']}">Thủy</span>
+                        </div>
+                        <div class="legend-group">
+                            <div class="legend-title">QUAN HỆ</div>
+                            <div><span class="legend-line legend-gen"></span> Tương Sinh</div>
+                            <div><span class="legend-line legend-ctrl"></span> Tương Khắc</div>
+                            <div><span class="legend-line legend-sanhe"></span> Tam Hợp</div>
+                            <div><span class="legend-line legend-relthe"></span> Sinh/Khắc với Thế</div>
+                            <div class="legend-dim">Lục Hợp (chưa có dữ liệu)</div>
+                            <div class="legend-dim">Xung · Phá · Hình · Hại (chưa có dữ liệu)</div>
+                        </div>
+                        <div class="legend-group">
+                            <div class="legend-title">TRẠNG THÁI</div>
+                            <span class="legend-chip legend-void">Tuần Không</span>
+                            <span class="legend-chip legend-moving">Hào Động</span>
+                            <span class="legend-chip legend-the">Thế</span>
+                            <span class="legend-chip legend-ung">Ứng</span>
+                            <div class="legend-dim">Nhật Phá · Nguyệt Phá (chưa có dữ liệu)</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildElementMap(data, xk) {
+
+            const elementsOrder = ['Mộc', 'Hỏa', 'Thổ', 'Kim', 'Thủy'];
+            const cx = 320, cy = 320, R1 = 175, R2 = 258;
+
+            function polar(angleDeg, r) {
+                const rad = angleDeg * Math.PI / 180;
+                return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+            }
+
+            const elementAngle = {};
+            elementsOrder.forEach((el, i) => { elementAngle[el] = -90 + i * 72; });
+
+            const elementPos = {};
+            elementsOrder.forEach(el => { elementPos[el] = polar(elementAngle[el], R1); });
+
+            const branchGroups = {};
+            elementsOrder.forEach(el => branchGroups[el] = []);
+            (data.lines || []).forEach(line => {
+                const el = getElement(line.branch);
+                if (branchGroups[el]) branchGroups[el].push(line);
+            });
+
+            const branchPos = {};
+            elementsOrder.forEach(el => {
+                const group = branchGroups[el];
+                const baseAngle = elementAngle[el];
+                const spread = 16;
+                const n = group.length;
+                group.forEach((line, idx) => {
+                    const offset = (idx - (n - 1) / 2) * spread;
+                    branchPos[line.pos] = polar(baseAngle + offset, R2);
+                });
+            });
+
+            let svg = `<svg viewBox="0 0 640 640" class="element-map-svg" role="img" aria-label="Ngũ hành và địa chi quan hệ đồ">`;
+
+            svg += `
+                <defs>
+                    <marker id="arrowGen" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                        <path d="M0,0 L6,3 L0,6 Z" fill="var(--bronze-light)" />
+                    </marker>
+                    <marker id="arrowCtrl" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                        <path d="M0,0 L6,3 L0,6 Z" fill="var(--fire)" />
+                    </marker>
+                    <marker id="arrowSanHe" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                        <path d="M0,0 L6,3 L0,6 Z" fill="var(--champagne)" />
+                    </marker>
+                </defs>
+            `;
+
+            /* Tương Sinh — generating cycle (adjacent nodes, soft curved) */
+            for (let i = 0; i < 5; i++) {
+                const a = elementPos[elementsOrder[i]];
+                const b = elementPos[elementsOrder[(i + 1) % 5]];
+                const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+                const dx = mx - cx, dy = my - cy;
+                const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                const pull = 16;
+                const ctrlX = mx + (dx / dist) * pull, ctrlY = my + (dy / dist) * pull;
+                svg += `<path class="gen-edge" d="M${a.x.toFixed(1)},${a.y.toFixed(1)} Q${ctrlX.toFixed(1)},${ctrlY.toFixed(1)} ${b.x.toFixed(1)},${b.y.toFixed(1)}"
+                            fill="none" stroke="var(--bronze-light)" stroke-width="2" stroke-opacity="0.75"
+                            marker-end="url(#arrowGen)" />`;
+            }
+
+            /* Tương Khắc — controlling cycle (pentagram, more directional) */
+            for (let i = 0; i < 5; i++) {
+                const a = elementPos[elementsOrder[i]];
+                const b = elementPos[elementsOrder[(i + 2) % 5]];
+                svg += `<line class="ctrl-edge" x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}"
+                            stroke="var(--fire)" stroke-width="1.6" stroke-opacity="0.55" stroke-dasharray="3 5"
+                            marker-end="url(#arrowCtrl)" />`;
+            }
+
+            /* Tam Hợp — San He formations (from data.dynamics.bureaus — no invented data) */
+            let formationDetails = '';
+            let formationIndex = 0;
+
+            ((data.dynamics && data.dynamics.bureaus) || []).forEach(b => {
+
+                const resultPos = elementPos[b.element];
+                if (!resultPos) return;
+
+                const R3 = R2 + 46;
+                const baseAngle = elementAngle[b.element];
+                const triSpread = 26;
+
+                const nodes = b.branches.map((branch, idx) => {
+                    const offset = (idx - (b.branches.length - 1) / 2) * triSpread;
+                    const p = polar(baseAngle + offset, R3);
+                    return { branch, x: p.x, y: p.y, isMissing: branch === b.missing };
+                });
+
+                const fId = 'f' + formationIndex;
+
+                for (let i = 0; i < nodes.length; i++) {
+                    const n1 = nodes[i], n2 = nodes[(i + 1) % nodes.length];
+                    const dashed = n1.isMissing || n2.isMissing;
+                    svg += `<line class="sanhe-edge" data-formation="${fId}"
+                                x1="${n1.x.toFixed(1)}" y1="${n1.y.toFixed(1)}" x2="${n2.x.toFixed(1)}" y2="${n2.y.toFixed(1)}"
+                                stroke="${elementColors[b.element]}" stroke-width="1.8"
+                                ${dashed ? 'stroke-dasharray="4 4"' : ''} stroke-opacity="0.75" />`;
+                }
+
+                const centroidX = nodes.reduce((s, n) => s + n.x, 0) / nodes.length;
+                const centroidY = nodes.reduce((s, n) => s + n.y, 0) / nodes.length;
+
+                svg += `<line class="sanhe-edge" data-formation="${fId}"
+                            x1="${centroidX.toFixed(1)}" y1="${centroidY.toFixed(1)}" x2="${resultPos.x.toFixed(1)}" y2="${resultPos.y.toFixed(1)}"
+                            stroke="var(--champagne)" stroke-width="2" stroke-opacity="0.7" marker-end="url(#arrowSanHe)" />`;
+
+                svg += `<text class="sanhe-label" data-formation="${fId}" x="${centroidX.toFixed(1)}" y="${(centroidY - 8).toFixed(1)}" text-anchor="middle">Tam Hợp</text>`;
+
+                nodes.forEach(n => {
+                    svg += buildBranchNodeSVG(n.x, n.y, n.branch, {
+                        isVoid: xk.some(x => x.includes(n.branch)),
+                        isMissingFormation: n.isMissing,
+                        formationId: fId,
+                        small: true
+                    });
+                });
+
+                formationDetails += buildFormationPanel(b, nodes, formationIndex, xk);
+                formationIndex++;
+            });
+
+            /* Sinh/Khắc arrows between the Thế branch and every other line's branch.
+               This is a deterministic lookup on the fixed Ngũ Hành cycle (elementsOrder) —
+               not an invented interpretive judgment about the reading. */
+            const theLine = (data.lines || []).find(l => l.mark && l.mark.includes('THẾ'));
+
+            if (theLine && branchPos[theLine.pos]) {
+
+                const theEl = getElement(theLine.branch);
+                const theP = branchPos[theLine.pos];
+
+                function relateElements(elA, elB) {
+                    if (elA === elB) return null; // tỷ hòa — no directional arrow
+                    const iA = elementsOrder.indexOf(elA), iB = elementsOrder.indexOf(elB);
+                    if (iA === -1 || iB === -1) return null;
+                    if ((iA + 1) % 5 === iB) return { type: 'sinh', from: 'A' };
+                    if ((iB + 1) % 5 === iA) return { type: 'sinh', from: 'B' };
+                    if ((iA + 2) % 5 === iB) return { type: 'khac', from: 'A' };
+                    if ((iB + 2) % 5 === iA) return { type: 'khac', from: 'B' };
+                    return null;
+                }
+
+                (data.lines || []).forEach(line => {
+                    if (line.pos === theLine.pos) return;
+                    const p = branchPos[line.pos];
+                    if (!p) return;
+
+                    const otherEl = getElement(line.branch);
+                    const rel = relateElements(theEl, otherEl);
+                    if (!rel) return;
+
+                    const source = rel.from === 'A' ? theP : p;
+                    const target = rel.from === 'A' ? p : theP;
+                    const isSinh = rel.type === 'sinh';
+                    const label = isSinh
+                        ? (rel.from === 'A' ? 'Thế sinh' : 'Sinh Thế')
+                        : (rel.from === 'A' ? 'Thế khắc' : 'Khắc Thế');
+
+                    const mx = (source.x + target.x) / 2;
+                    const my = (source.y + target.y) / 2;
+
+                    svg += `<line class="rel-edge ${isSinh ? 'rel-sinh' : 'rel-khac'}"
+                                x1="${source.x.toFixed(1)}" y1="${source.y.toFixed(1)}"
+                                x2="${target.x.toFixed(1)}" y2="${target.y.toFixed(1)}"
+                                stroke="${isSinh ? 'var(--bronze-light)' : 'var(--fire)'}"
+                                stroke-width="1.5" stroke-opacity="${isSinh ? 0.55 : 0.6}"
+                                ${isSinh ? '' : 'stroke-dasharray="3 4"'}
+                                marker-end="url(${isSinh ? '#arrowGen' : '#arrowCtrl'})" />`;
+
+                    svg += `<text class="rel-edge-label" x="${mx.toFixed(1)}" y="${(my - 4).toFixed(1)}" text-anchor="middle">${label}</text>`;
+                });
+            }
+
+            /* actual six-line branch nodes */
+            (data.lines || []).forEach(line => {
+                const p = branchPos[line.pos];
+                if (!p) return;
+                svg += buildBranchNodeSVG(p.x, p.y, line.branch, {
+                    pos: line.pos,
+                    mark: line.mark,
+                    isMoving: line.isMoving,
+                    isVoid: xk.some(x => x.includes(line.branch)),
+                    element: getElement(line.branch)
+                });
+            });
+
+            /* five element core nodes (drawn last, on top) */
+            elementsOrder.forEach(el => {
+                const p = elementPos[el];
+                svg += `
+                    <g class="element-node" data-element="${el}">
+                        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="30" fill="${elementColors[el]}" fill-opacity="0.9" stroke="var(--cosmic-navy-deep)" stroke-width="2"/>
+                        <text x="${p.x.toFixed(1)}" y="${(p.y + 5).toFixed(1)}" text-anchor="middle" class="element-node-label">${el}</text>
+                    </g>
+                `;
+            });
+
+            svg += `</svg>`;
+
+            return { svg, formationDetails };
+        }
+
+        function buildElementMapSection(data, xk) {
+            const map = buildElementMap(data, xk);
+
+            return `
+                <div class="element-map-card">
+                    <div class="element-map-header">
+                        <div class="section-title">TAM HỢP CỤC</div>
+                        <div class="section-subtitle">NGŨ HÀNH RELATIONSHIP MAP</div>
+                    </div>
+
+                    <p class="element-map-intro">
+                        Trực quan hóa quan hệ giữa sáu hào, địa chi, ngũ hành và các cục đang kích hoạt trong quẻ này.
+                    </p>
+
+                    ${buildSixLineStrip(data, xk)}
+
+                    <div class="element-map-scroll">
+                        ${map.svg}
+                    </div>
+
+                    ${map.formationDetails || `
+                        <div class="box awaiting-box">
+                            Chưa phát hiện Tam Hợp Cục nào trong dữ liệu hiện tại.
+                        </div>
+                    `}
+
+                    ${buildTimeEnvironment(data, xk)}
+
+                    <div class="box awaiting-box">
+                        Ma trận quan hệ từng cặp (Lục Hợp / Xung / Phá / Hình / Hại) sẽ hiển thị khi engine cung cấp dữ liệu quan hệ chi tiết.
+                    </div>
+
+                    ${buildElementMapLegend()}
+                </div>
+            `;
+        }
+
+        function initElementMapInteractions(root) {
+            const svg = root.querySelector('.element-map-svg');
+            if (!svg) return;
+
+            function clear() {
+                svg.classList.remove('hovering');
+                svg.querySelectorAll('.hl-target').forEach(n => n.classList.remove('hl-target'));
+            }
+
+            svg.addEventListener('mouseover', (e) => {
+                const target = e.target.closest('[data-element], [data-formation]');
+                if (!target) return;
+                const elName = target.getAttribute('data-element');
+                const formationId = target.getAttribute('data-formation');
+
+                svg.classList.add('hovering');
+                svg.querySelectorAll('.hl-target').forEach(n => n.classList.remove('hl-target'));
+
+                svg.querySelectorAll('[data-element], [data-formation]').forEach(n => {
+                    const matchEl = elName && n.getAttribute('data-element') === elName;
+                    const matchFm = formationId && n.getAttribute('data-formation') === formationId;
+                    if (matchEl || matchFm) n.classList.add('hl-target');
+                });
+            });
+
+            svg.addEventListener('mouseout', (e) => {
+                if (!e.relatedTarget || !svg.contains(e.relatedTarget)) clear();
+            });
+        }
+
+
+        /* =========================================================
+           RENDER ARCHITECTURE
+           ========================================================= */
+
+        function renderArchitecture() {
+
+            try {
+
+                const data = JSON.parse(
+                    cleanJsonString(document.getElementById('jsonInput').value)
+                );
+
+                const xk = data.xunKong || [];
+
+                const palaceEl = getElement(
+                    data.palace.includes('Tốn') || data.palace.includes('Chấn')
+                        ? 'Dần'
+                        : data.palace.includes('Ly')
+                            ? 'Ngọ'
+                            : data.palace.includes('Khôn') || data.palace.includes('Cấn')
+                                ? 'Tuất'
+                                : data.palace.includes('Càn') || data.palace.includes('Đoài')
+                                    ? 'Thân'
+                                    : 'Tý'
+                );
+
+
+                /* QUESTION */
+
+                let questionHtml = '';
+                if (data.questionContext) {
+                    questionHtml = `
+                        <div class="question-box">
+                            <span class="question-label">📜 Tóm tắt vấn đề</span>
+                            ${highlightXunKong(data.questionContext, xk)}
+                        </div>
+                    `;
+                }
+
+
+                /* TỨ TRỤ */
+
+                let pillarsHtml = data.pillars
+                    .split('|')
+                    .map(p => {
+                        let text = p.trim();
+                        let branch = twelveBranches.find(b => text.includes(b)) || '';
+                        let el = getElement(branch);
+                        let badge = branch
+                            ? `<span class="element-badge" style="background-color:${elementColors[el]}">${el}</span>`
+                            : '';
+                        return `<span class="pillar-item">${highlightXunKong(text, xk)}${badge}</span>`;
+                    })
+                    .join(' ');
+
+
+                /* TUẦN KHÔNG — celestial dial */
+
+                let xkGrid = `<div class="xk-dial">`;
+                twelveBranches.forEach((b, i) => {
+                    let isVoid = xk.some(x => x.includes(b));
+                    xkGrid += `
+                        <div class="xk-node ${isVoid ? 'xk-void' : 'xk-active'}" style="--i:${i};">
+                            ${b}
+                        </div>
+                    `;
+                });
+                xkGrid += `<div class="xk-dial-center">☾</div></div>`;
+
+
+                /* MAIN HTML */
+
+                let html = `
+
+                    <div class="report-header">
+                        <div class="report-eyebrow">COSMIC BUNNY · LỤC HÀO ARCHITECTURE</div>
+                        <h1 class="report-title">Bản Đồ Kiến Trúc Lục Hào</h1>
+                        <div class="report-meta">
+                            <span class="hexagram-name">${data.hexagramName}</span>
+                            &nbsp;·&nbsp; Hành Gốc:
+                            <span class="element-badge" style="background-color:${elementColors[palaceEl]}; font-size:11px;">
+                                ${data.palace} (${palaceEl})
+                            </span>
+                        </div>
+                    </div>
+
+                    ${questionHtml}
+
+
+                    <div class="section-header">
+                        <div class="section-num">01</div>
+                        <div class="section-heading">
+                            <div class="section-title">MÔI TRƯỜNG &amp; KHUNG THỜI GIAN</div>
+                            <div class="section-subtitle">Ngoại cảnh</div>
+                        </div>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="box">
+                            <span class="highlight-text">Tứ Trụ (Pillars)</span>
+                            <br><br>
+                            ${pillarsHtml}
+                        </div>
+
+                        <div class="box" style="text-align:center;">
+                            <span class="highlight-text">Tuần Không (Hố Đen)</span>
+                            ${xkGrid}
+                        </div>
+                    </div>
+
+
+                    <div class="section-header">
+                        <div class="section-num">02</div>
+                        <div class="section-heading">
+                            <div class="section-title">CẤU TRÚC LÕI</div>
+                            <div class="section-subtitle">Bố cục nhân vật</div>
+                        </div>
+                    </div>
+
+                    <table class="hex-table">
+                        <thead>
+                            <tr>
+                                <th style="width:22%">Hào / Vai</th>
+                                <th style="width:18%">Địa Chi</th>
+                                <th style="width:14%">Lục Thú</th>
+                                <th style="width:13%">Vượng Suy</th>
+                                <th>Động / Biến</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+
+                /* LINES */
+
+                for (let i = 0; i < data.lines.length; i++) {
+
+                    const line = data.lines[i];
+                    const el = getElement(line.branch);
+
+                    /* THẾ / ỨNG */
+
+                    let posHtml = `<span class="hex-pos">${line.pos}</span>`;
+
+                    if (line.mark.includes('THẾ')) {
+                        posHtml = `<span class="hex-pos-marked hex-pos-the">${line.pos}</span>`;
+                    }
+                    else if (line.mark.includes('ỨNG')) {
+                        posHtml = `<span class="hex-pos-marked hex-pos-ung">${line.pos}</span>`;
+                    }
+
+                    /* ĐỘNG BIẾN */
+
+                    let markDetail = '';
+
+                    if (line.isMoving && line.mark) {
+                        let parsedMark = line.mark
+                            .replace('THẾ', '')
+                            .replace('ỨNG', '')
+                            .replace('Động', '')
+                            .replace('biến', '')
+                            .trim();
+
+                        markDetail = `
+                            <div class="hex-mark">
+                                ⟿ Biến: ${highlightXunKong(parsedMark, xk)}
+                            </div>
+                        `;
+                    }
+                    else if (line.mark && !line.mark.includes('THẾ') && !line.mark.includes('ỨNG')) {
+                        markDetail = line.mark;
+                    }
+
+                    html += `
+                        <tr class="${line.isMoving ? 'hex-moving' : ''}">
+                            <td>${posHtml}<span>${line.role}</span></td>
+                            <td data-label="Địa chi">
+                                ${highlightXunKong(line.branch, xk)}
+                                <span class="element-badge" style="background-color:${elementColors[el]}">${el}</span>
+                            </td>
+                            <td data-label="Lục thú">${line.beast}</td>
+                            <td data-label="Trạng thái" class="${getStateClass(line.state)}">${line.state}</td>
+                            <td data-label="Động / Biến">${markDetail || '<span style="color:var(--text-muted);">—</span>'}</td>
+                        </tr>
+                    `;
+                }
+
+
+                html += `
+                        </tbody>
+                    </table>
+
+
+                    <div class="section-header">
+                        <div class="section-num">03</div>
+                        <div class="section-heading">
+                            <div class="section-title">ĐỘNG LỰC HỌC TƯƠNG TÁC</div>
+                            <div class="section-subtitle">Cơ chế sinh khắc</div>
+                        </div>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="box">
+                            <span class="highlight-text">Trụ Cột Sinh Khắc</span>
+
+                            <ul class="dynamics-list">
+                                <li>
+                                    <span class="dyn-role">DỤNG</span>
+                                    <span>${highlightXunKong(data.dynamics.yongShen.name, xk)}
+                                        <i style="color:var(--text-muted);">(${data.dynamics.yongShen.state})</i>
+                                    </span>
+                                </li>
+                                <li>
+                                    <span class="dyn-role">NGUYÊN</span>
+                                    <span>${highlightXunKong(data.dynamics.yuanShen.name, xk)}
+                                        <i style="color:var(--text-muted);">(${data.dynamics.yuanShen.state})</i>
+                                    </span>
+                                </li>
+                                <li>
+                                    <span class="dyn-role">KỴ</span>
+                                    <span>${highlightXunKong(data.dynamics.jiShen.name, xk)}
+                                        <i style="color:var(--text-muted);">(${data.dynamics.jiShen.state})</i>
+                                    </span>
+                                </li>
+                            </ul>
+
+                            <div class="flow-row">
+                                <span class="flow-node">${highlightXunKong(data.dynamics.shiYingAction.from, xk)}</span>
+                                ${getArrow(data.dynamics.shiYingAction.type)}
+                                <span class="flow-node">${highlightXunKong(data.dynamics.shiYingAction.to, xk)}</span>
+                            </div>
+                        </div>
+
+                        <div class="box">
+                            <span class="highlight-text">Đại Cục (Shape)</span>
+                            <div class="shape-plate">${data.dynamics.shape}</div>
+                        </div>
+                    </div>
+                `;
+
+
+                /* TAM HỢP CỤC · NGŨ HÀNH MAP */
+
+                html += buildElementMapSection(data, xk);
+
+
+                /* ỨNG KỲ — timeline */
+
+                html += `
+                    <div class="section-header">
+                        <div class="section-num">04</div>
+                        <div class="section-heading">
+                            <div class="section-title">ỨNG KỲ THỜI GIAN</div>
+                            <div class="section-subtitle">Response windows</div>
+                        </div>
+                    </div>
+
+                    <div class="timeline">
+                `;
+
+                data.responseWindows.forEach(rw => {
+
+                    let typeColor =
+                        rw.type === 'Favorable'
+                            ? 'var(--sinh)'
+                            : rw.type === 'Obstacle'
+                                ? 'var(--khac)'
+                                : 'var(--hoa)';
+
+                    html += `
+                        <div class="timeline-item">
+                            <div class="timeline-marker" style="background:${typeColor};"></div>
+                            <div class="timeline-card">
+                                <div class="timeline-head">
+                                    <span class="timeline-timing">${highlightXunKong(rw.timing, xk)}</span>
+                                    <span class="timeline-tag" style="color:${typeColor}; border-color:${typeColor};">
+                                        ${responseTypeLabel(rw.type)}
+                                    </span>
+                                </div>
+                                <div class="timeline-desc">${highlightXunKong(rw.desc, xk)}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `
+                    </div>
+
+                    <div class="report-footer">
+                        COSMIC BUNNY — Lục Hào Architecture · Khởi tạo ngày 24/08/2026
+                    </div>
+                `;
+
+                document.getElementById('a4Content').innerHTML = html;
+
+                initElementMapInteractions(document.getElementById('a4Content'));
+            }
+
+            catch (err) {
+                document.getElementById('a4Content').innerHTML = `
+                    <div class="error-msg">
+                        <h2>⚠️ LỖI CẤU TRÚC JSON</h2>
+                        <p>${err.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+
+        /* =========================================================
+           SAMPLE DATA (unchanged)
+           ========================================================= */
+
+        const sampleData = {
+            "questionContext": "Tôi định hợp tác mặt bằng với một chị, việc đó có hiệu quả không? Hào Thế đại diện cho Tài (Dòng tiền), Ứng đại diện cho Phụ Mẫu (Mặt bằng).",
+            "hexagramName": "Sơn Lôi Di (Biến Trung Phu)",
+            "palace": "Cung Tốn",
+            "pillars": "Năm Ngọ | Tháng Mùi | Ngày Sửu | Giờ Ngọ",
+            "xunKong": ["Dần", "Mão"],
+            "lines": [
+                { "pos": 6, "role": "Huynh Đệ", "branch": "Dần", "beast": "Bạch Hổ", "state": "Tù", "isMoving": false, "mark": "" },
+                { "pos": 5, "role": "Phụ Mẫu", "branch": "Tý", "beast": "Đằng Xà", "state": "Tử", "isMoving": true, "mark": "Động biến Tỵ (Hỏa) Tướng (Hóa Tuyệt)" },
+                { "pos": 4, "role": "Thê Tài", "branch": "Tuất", "beast": "Câu Trần", "state": "Vượng", "isMoving": false, "mark": "THẾ" },
+                { "pos": 3, "role": "Thê Tài", "branch": "Thìn", "beast": "Chu Tước", "state": "Vượng", "isMoving": false, "mark": "" },
+                { "pos": 2, "role": "Huynh Đệ", "branch": "Dần", "beast": "Thanh Long", "state": "Tù", "isMoving": true, "mark": "Động biến Mão (Mộc) Tướng (Hóa Tiến, Không Vong)" },
+                { "pos": 1, "role": "Phụ Mẫu", "branch": "Tý", "beast": "Huyền Vũ", "state": "Tử", "isMoving": false, "mark": "ỨNG" }
+            ],
+            "dynamics": {
+                "yongShen": { "name": "Hào 4 - Thê Tài (Tuất Thổ)", "state": "Vượng" },
+                "yuanShen": { "name": "Tử Tôn (Hỏa)", "state": "Không hiện diện / Phục thần" },
+                "jiShen": { "name": "Hào 2, 6 - Huynh Đệ (Dần Mộc)", "state": "Tù, Động" },
+                "shiYingAction": { "from": "Thế (Thổ)", "to": "Ứng (Thủy)", "type": "khắc" },
+                "shape": "Du Hồn (Linh hồn đi lạc, bấp bênh)",
+                "bureaus": [
+                    { "element": "Mộc", "branches": ["Hợi", "Mão", "Mùi"], "missing": "Hợi", "desc": "Tam hợp Mộc Cục khắc Thế (Bẫy hao tài cản trở)." }
+                ]
+            },
+            "responseWindows": [
+                { "timing": "Ngày Tuất / Thìn", "type": "Favorable", "desc": "Hào Tài vượng, nắm thế thượng phong chốt ép giá thuê." },
+                { "timing": "Tháng Dần / Mão", "type": "Obstacle", "desc": "Kỵ thần xuất Không, cò mồi bòn rút." }
+            ]
+        };
+
+
+        /* =========================================================
+           INITIALIZE
+           ========================================================= */
+
+        document.getElementById('jsonInput').value = JSON.stringify(sampleData, null, 4);
+
+    </script>
+
+</body>
+</html>
